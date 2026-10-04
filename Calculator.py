@@ -1,381 +1,100 @@
 import streamlit as st
 import math
-import re
 
-st.set_page_config(
-    page_title="Scientific Calculator",
-    page_icon="🧮",
-    layout="centered"
-)
-
-# ---------------- FUNCTIONS ----------------
-
-def sin(x, mode):
-    return math.sin(math.radians(x)) if mode == "DEG" else math.sin(x)
-
-def cos(x, mode):
-    return math.cos(math.radians(x)) if mode == "DEG" else math.cos(x)
-
-def tan(x, mode):
-    return math.tan(math.radians(x)) if mode == "DEG" else math.tan(x)
-
-def cot(x, mode):
-    value = tan(x, mode)
-    if abs(value) < 1e-12:
-        raise ValueError("Cotangent is undefined")
-    return 1 / value
-
-def sec(x, mode):
-    value = cos(x, mode)
-    if abs(value) < 1e-12:
-        raise ValueError("Secant is undefined")
-    return 1 / value
-
-def csc(x, mode):
-    value = sin(x, mode)
-    if abs(value) < 1e-12:
-        raise ValueError("Cosecant is undefined")
-    return 1 / value
-
-def asin(x, mode):
-    result = math.asin(x)
-    return math.degrees(result) if mode == "DEG" else result
-
-def acos(x, mode):
-    result = math.acos(x)
-    return math.degrees(result) if mode == "DEG" else result
-
-def atan(x, mode):
-    result = math.atan(x)
-    return math.degrees(result) if mode == "DEG" else result
-
-
-# ---------------- SESSION STATE ----------------
-
-if "expression" not in st.session_state:
-    st.session_state.expression = ""
-
-if "answer" not in st.session_state:
-    st.session_state.answer = "0"
-
-if "mode" not in st.session_state:
-    st.session_state.mode = "DEG"
-
-
-# ---------------- CALCULATOR ----------------
-
-st.title("🧮 Scientific Calculator")
-st.caption("Python + Streamlit")
-
-# DEG/RAD
-mode = st.radio(
-    "Angle Mode",
-    ["DEG", "RAD"],
-    horizontal=True,
-    index=0 if st.session_state.mode == "DEG" else 1
-)
-
-st.session_state.mode = mode
-
-
-# ---------------- KEYBOARD INPUT ----------------
-
-keyboard_input = st.text_input(
-    "⌨️ Enter expression using keyboard:",
-    value=st.session_state.expression,
-    placeholder="Example: sin(30)+5^2"
-)
-
-st.session_state.expression = keyboard_input
-
-
-# ---------------- DISPLAY ----------------
-
-st.text_input(
-    "Display",
-    value=st.session_state.expression,
-    disabled=True
-)
-
-
-# ---------------- CALCULATE FUNCTION ----------------
-
-def calculate():
-
-    expression = st.session_state.expression
-
-    if not expression:
-        return
-
-    try:
-        expression = expression.replace("^", "**")
-        expression = expression.replace("×", "*")
-        expression = expression.replace("÷", "/")
-
-        # Factorial
-        expression = re.sub(
-            r"(\d+(?:\.\d+)?)!",
-            r"factorial(\1)",
-            expression
-        )
-
-        functions = {
-            "sin": lambda x: sin(x, mode),
-            "cos": lambda x: cos(x, mode),
-            "tan": lambda x: tan(x, mode),
-            "cot": lambda x: cot(x, mode),
-            "sec": lambda x: sec(x, mode),
-            "csc": lambda x: csc(x, mode),
-
-            "asin": lambda x: asin(x, mode),
-            "acos": lambda x: acos(x, mode),
-            "atan": lambda x: atan(x, mode),
-
-            "log": math.log10,
-            "ln": math.log,
-            "sqrt": math.sqrt,
-
-            "factorial": lambda x: math.factorial(int(x)),
-
-            "pi": math.pi,
-            "e": math.e
-        }
-
-        result = eval(
-            expression,
-            {"__builtins__": {}},
-            functions
-        )
-
-        if isinstance(result, float):
-            if abs(result) < 1e-12:
-                result = 0
-            result = round(result, 12)
-
-        st.session_state.answer = str(result)
-        st.session_state.expression = str(result)
-
-    except ZeroDivisionError:
-        st.error("Cannot divide by zero.")
-
-    except ValueError:
-        st.error("Invalid mathematical value.")
-
-    except Exception:
-        st.error("Invalid expression. Please check your input.")
-
-
-# ---------------- BUTTON FUNCTION ----------------
-
-def add_text(value):
-    st.session_state.expression += value
-
-
-# ---------------- SCIENTIFIC BUTTONS ----------------
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    if st.button("sin", use_container_width=True):
-        add_text("sin(")
-
-with col2:
-    if st.button("cos", use_container_width=True):
-        add_text("cos(")
-
-with col3:
-    if st.button("tan", use_container_width=True):
-        add_text("tan(")
-
-with col4:
-    if st.button("cot", use_container_width=True):
-        add_text("cot(")
-
-with col5:
-    if st.button("C", use_container_width=True):
-        st.session_state.expression = ""
-
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    if st.button("asin", use_container_width=True):
-        add_text("asin(")
-
-with col2:
-    if st.button("acos", use_container_width=True):
-        add_text("acos(")
-
-with col3:
-    if st.button("atan", use_container_width=True):
-        add_text("atan(")
-
-with col4:
-    if st.button("sec", use_container_width=True):
-        add_text("sec(")
-
-with col5:
-    if st.button("⌫", use_container_width=True):
-        st.session_state.expression = st.session_state.expression[:-1]
-
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    if st.button("csc", use_container_width=True):
-        add_text("csc(")
-
-with col2:
-    if st.button("log", use_container_width=True):
-        add_text("log(")
-
-with col3:
-    if st.button("ln", use_container_width=True):
-        add_text("ln(")
-
-with col4:
-    if st.button("√", use_container_width=True):
-        add_text("sqrt(")
-
-with col5:
-    if st.button("(", use_container_width=True):
-        add_text("(")
-
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    if st.button(")", use_container_width=True):
-        add_text(")")
-
-with col2:
-    if st.button("π", use_container_width=True):
-        add_text("pi")
-
-with col3:
-    if st.button("e", use_container_width=True):
-        add_text("e")
-
-with col4:
-    if st.button("x²", use_container_width=True):
-        add_text("**2")
-
-with col5:
-    if st.button("xʸ", use_container_width=True):
-        add_text("**")
-
-
-# ---------------- NUMERIC BUTTONS ----------------
-
-st.markdown("### Numeric Keypad")
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    if st.button("7", use_container_width=True):
-        add_text("7")
-
-with col2:
-    if st.button("8", use_container_width=True):
-        add_text("8")
-
-with col3:
-    if st.button("9", use_container_width=True):
-        add_text("9")
-
-with col4:
-    if st.button("÷", use_container_width=True):
-        add_text("/")
-
-with col5:
-    if st.button("%", use_container_width=True):
-        add_text("/100")
-
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    if st.button("4", use_container_width=True):
-        add_text("4")
-
-with col2:
-    if st.button("5", use_container_width=True):
-        add_text("5")
-
-with col3:
-    if st.button("6", use_container_width=True):
-        add_text("6")
-
-with col4:
-    if st.button("×", use_container_width=True):
-        add_text("*")
-
-with col5:
-    if st.button("!", use_container_width=True):
-        add_text("!")
-
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    if st.button("1", use_container_width=True):
-        add_text("1")
-
-with col2:
-    if st.button("2", use_container_width=True):
-        add_text("2")
-
-with col3:
-    if st.button("3", use_container_width=True):
-        add_text("3")
-
-with col4:
-    if st.button("-", use_container_width=True):
-        add_text("-")
-
-with col5:
-    if st.button("=", use_container_width=True):
-        calculate()
-
-
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    if st.button("0", use_container_width=True):
-        add_text("0")
-
-with col2:
-    if st.button(".", use_container_width=True):
-        add_text(".")
-
-with col3:
-    if st.button("00", use_container_width=True):
-        add_text("00")
-
-with col4:
-    if st.button("+", use_container_width=True):
-        add_text("+")
-
-with col5:
-    if st.button("Ans", use_container_width=True):
-        add_text(st.session_state.answer)
-
-
-# ---------------- CALCULATE FROM KEYBOARD ----------------
-
-if st.button("🔢 Calculate", type="primary", use_container_width=True):
-    calculate()
-
-
-# ---------------- INFORMATION ----------------
-
-st.divider()
-
-st.info(
-    "Keyboard input is supported through the expression box. "
-    "You can also use the mouse to press calculator buttons."
-)
-
-st.caption(
-    "Scientific Calculator | Python | Streamlit"
-)
+st.set_page_config(page_title="Scientific Calculator", page_icon="🧮", layout="centered")
+
+st.title("🧮 Advanced Scientific Calculator")
+
+# Choice for Interaction Method
+input_method = st.radio("Select Input Mode:", ["On-Screen Scientific Keyboard", "Direct Text Input"], horizontal=True)
+
+if input_method == "Direct Text Input":
+    st.subheader("⌨️ Keyboard Mode")
+    st.caption("Type any mathematical expression directly using your laptop keyboard:")
+    
+    expr = st.text_input("Enter expression:", placeholder="e.g. sin(30) + sqrt(16) * 5")
+    
+    if st.button("Calculate Result", type="primary", use_container_width=True):
+        try:
+            allowed = {k: v for k, v in math.__dict__.items() if not k.startswith("__")}
+            res = eval(expr, {"__builtins__": None}, allowed)
+            st.success(f"**Result:** {res}")
+        except Exception:
+            st.error("Invalid Math Syntax! Please check your expression.")
+
+else:
+    st.subheader("🖥️ Interactive Scientific Layout")
+    
+    if "calc_input" not in st.session_state:
+        st.session_state.calc_input = ""
+
+    # Live Display Bar (Read-only representation)
+    st.text_input("Display Bar:", value=st.session_state.calc_input, key="display_bar", disabled=True)
+
+    # Helper function to append text
+    def add_to_input(val):
+        st.session_state.calc_input += str(val)
+
+    def clear_input():
+        st.session_state.calc_input = ""
+
+    def backspace():
+        st.session_state.calc_input = st.session_state.calc_input[:-1]
+
+    # Row 1: Scientific Functions
+    r1_col1, r1_col2, r1_col3, r1_col4, r1_col5 = st.columns(5)
+    with r1_col1: st.button("sin", on_click=add_to_input, args=("sin(",), use_container_width=True)
+    with r1_col2: st.button("cos", on_click=add_to_input, args=("cos(",), use_container_width=True)
+    with r1_col3: st.button("tan", on_click=add_to_input, args=("tan(",), use_container_width=True)
+    with r1_col4: st.button("log", on_click=add_to_input, args=("log10(",), use_container_width=True)
+    with r1_col5: st.button("ln", on_click=add_to_input, args=("log(",), use_container_width=True)
+
+    # Row 2: Advanced Math
+    r2_col1, r2_col2, r2_col3, r2_col4, r2_col5 = st.columns(5)
+    with r2_col1: st.button("√ (sqrt)", on_click=add_to_input, args=("sqrt(",), use_container_width=True)
+    with r2_col2: st.button("π (pi)", on_click=add_to_input, args=("pi",), use_container_width=True)
+    with r2_col3: st.button("e", on_click=add_to_input, args=("e",), use_container_width=True)
+    with r2_col4: st.button("^ (pow)", on_click=add_to_input, args=("**",), use_container_width=True)
+    with r2_col5: st.button("abs", on_click=add_to_input, args=("abs(",), use_container_width=True)
+
+    # Row 3: Standard Numbers & Controls
+    r3_col1, r3_col2, r3_col3, r3_col4, r3_col5 = st.columns(5)
+    with r3_col1: st.button("7", on_click=add_to_input, args=("7",), use_container_width=True)
+    with r3_col2: st.button("8", on_click=add_to_input, args=("8",), use_container_width=True)
+    with r3_col3: st.button("9", on_click=add_to_input, args=("9",), use_container_width=True)
+    with r3_col4: st.button("DEL", on_click=backspace, use_container_width=True)
+    with r3_col5: st.button("CLR", on_click=clear_input, use_container_width=True)
+
+    # Row 4: Numbers & Operators
+    r4_col1, r4_col2, r4_col3, r4_col4, r4_col5 = st.columns(5)
+    with r4_col1: st.button("4", on_click=add_to_input, args=("4",), use_container_width=True)
+    with r4_col2: st.button("5", on_click=add_to_input, args=("5",), use_container_width=True)
+    with r4_col3: st.button("6", on_click=add_to_input, args=("6",), use_container_width=True)
+    with r4_col4: st.button("×", on_click=add_to_input, args=("*",), use_container_width=True)
+    with r4_col5: st.button("÷", on_click=add_to_input, args=("/",), use_container_width=True)
+
+    # Row 5: Numbers, Brackets & Operators
+    r5_col1, r5_col2, r5_col3, r5_col4, r5_col5 = st.columns(5)
+    with r5_col1: st.button("1", on_click=add_to_input, args=("1",), use_container_width=True)
+    with r5_col2: st.button("2", on_click=add_to_input, args=("2",), use_container_width=True)
+    with r5_col3: st.button("3", on_click=add_to_input, args=("3",), use_container_width=True)
+    with r5_col4: st.button("+", on_click=add_to_input, args=("+",), use_container_width=True)
+    with r5_col5: st.button("-", on_click=add_to_input, args=("-",), use_container_width=True)
+
+    # Row 6: Zero, Decimals & Brackets
+    r6_col1, r6_col2, r6_col3, r6_col4, r6_col5 = st.columns(5)
+    with r6_col1: st.button("0", on_click=add_to_input, args=("0",), use_container_width=True)
+    with r6_col2: st.button(".", on_click=add_to_input, args=(".",), use_container_width=True)
+    with r6_col3: st.button("(", on_click=add_to_input, args=("(",), use_container_width=True)
+    with r6_col4: st.button(")", on_click=add_to_input, args=(")",), use_container_width=True)
+    with r6_col5: st.button("%", on_click=add_to_input, args=("/100",), use_container_width=True)
+
+    # Calculate Equal Button
+    if st.button("=", type="primary", use_container_width=True):
+        try:
+            allowed = {k: v for k, v in math.__dict__.items() if not k.startswith("__")}
+            result = eval(st.session_state.calc_input, {"__builtins__": None}, allowed)
+            st.session_state.calc_input = str(result)
+            st.rerun()
+        except Exception:
+            st.error("Syntax Error!")
